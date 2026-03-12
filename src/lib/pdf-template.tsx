@@ -104,14 +104,6 @@ function IconSpare() {
   );
 }
 
-function IconStar() {
-  return (
-    <Svg width="12" height="12" viewBox="0 0 12 12">
-      <Path d="M6 1 L7.5 4 L11 4.5 L8.5 7 L9 10.5 L6 9 L3 10.5 L3.5 7 L1 4.5 L4.5 4 Z" fill={C.orange} />
-    </Svg>
-  );
-}
-
 const SVC_ICONS: Record<string, () => React.JSX.Element> = {
   "3d-scanning": IconScan,
   "3d-printing": IconPrint,
@@ -202,14 +194,6 @@ const s = StyleSheet.create({
   processLabel: { fontSize: 7, color: C.navy, fontWeight: "bold", textAlign: "center" },
   processSubLabel: { fontSize: 6, color: C.gray, textAlign: "center", marginTop: 1 },
 
-  // References / Testimonials
-  refGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 },
-  refCard: { width: "48%", backgroundColor: C.offWhite, borderRadius: 6, padding: 14, borderBottomWidth: 3, borderBottomColor: C.orange, marginBottom: 2 },
-  refQuote: { fontSize: 8, color: C.textLight, lineHeight: 1.6, fontStyle: "italic", marginBottom: 8 },
-  refAuthor: { fontSize: 8, fontWeight: "bold", color: C.navy },
-  refRole: { fontSize: 7, color: C.gray },
-  refStars: { flexDirection: "row", gap: 2, marginBottom: 6 },
-
   // Case studies
   caseCard: { backgroundColor: C.offWhite, borderRadius: 6, padding: 14, marginBottom: 10, flexDirection: "row", gap: 14, borderLeftWidth: 4, borderLeftColor: C.orange },
   caseLeft: { flex: 1 },
@@ -292,14 +276,6 @@ const T = {
       { l: "Production", s: "3D printing" },
       { l: "QC & Delivery", s: "Final inspection" },
     ],
-    refTitle: "Client Testimonials",
-    refSub: "WHAT OUR CLIENTS SAY",
-    refs: [
-      { q: "3DS.MA transformed our prototyping process. What used to take weeks now takes days. Their precision and professionalism are unmatched.", a: "Ahmed B.", r: "Production Director, Automotive OEM", stars: 5 },
-      { q: "Outstanding quality on our reverse engineering project. The team captured every detail of our legacy parts with incredible accuracy.", a: "Sophie L.", r: "Engineering Manager, Aerospace Corp", stars: 5 },
-      { q: "We've been working with 3DS.MA for 3 years. Their 3D scanning and quality control services have reduced our defect rate by 40%.", a: "Karim M.", r: "Quality Manager, Manufacturing Co.", stars: 5 },
-      { q: "Fast, reliable, and cost-effective. Their spare parts manufacturing saved us significant downtime on critical production equipment.", a: "Jean-Pierre D.", r: "Maintenance Lead, Industrial Group", stars: 5 },
-    ],
     caseTitle: "Project Showcase",
     caseSub: "SELECTED CASE STUDIES",
     cases: [
@@ -366,14 +342,6 @@ const T = {
       { l: "Traitement", s: "Modélisation CAO" },
       { l: "Production", s: "Impression 3D" },
       { l: "CQ & Livraison", s: "Inspection finale" },
-    ],
-    refTitle: "Témoignages Clients",
-    refSub: "CE QUE DISENT NOS CLIENTS",
-    refs: [
-      { q: "3DS.MA a transformé notre processus de prototypage. Ce qui prenait des semaines ne prend plus que des jours. Précision et professionnalisme inégalés.", a: "Ahmed B.", r: "Directeur Production, OEM Automobile", stars: 5 },
-      { q: "Qualité exceptionnelle sur notre projet de rétro-ingénierie. L'équipe a capturé chaque détail de nos pièces avec une précision incroyable.", a: "Sophie L.", r: "Responsable Ingénierie, Corp. Aéro.", stars: 5 },
-      { q: "Nous travaillons avec 3DS.MA depuis 3 ans. Leurs services de scan 3D et contrôle qualité ont réduit notre taux de défauts de 40%.", a: "Karim M.", r: "Responsable Qualité, Fab. Industrielle", stars: 5 },
-      { q: "Rapide, fiable et économique. Leur fabrication de pièces de rechange nous a épargné des temps d'arrêt importants.", a: "Jean-Pierre D.", r: "Resp. Maintenance, Groupe Industriel", stars: 5 },
     ],
     caseTitle: "Projets Réalisés",
     caseSub: "ÉTUDES DE CAS SÉLECTIONNÉES",
@@ -459,7 +427,7 @@ export function createPdfDocument(language: Language, companyInfo: CompanyInfo) 
   const ph = companyInfo.phone || "+212 XXX XXX XXX";
   const ws = companyInfo.website || "www.3ds.ma";
   const ad = companyInfo.address || "Morocco";
-  const totalPages = 6;
+  const totalPages = 5;
 
   return (
     <Document>
@@ -548,26 +516,11 @@ export function createPdfDocument(language: Language, companyInfo: CompanyInfo) 
             ))}
           </View>
 
-          <Text style={s.secSub}>{t.refSub}</Text>
-          <Text style={s.secTitle}>{t.refTitle}</Text>
-          <View style={s.accent} />
-          <View style={s.refGrid}>
-            {t.refs.map((ref, i) => (
-              <View key={i} style={s.refCard}>
-                <View style={s.refStars}>
-                  {Array.from({ length: ref.stars }).map((_, si) => <IconStar key={si} />)}
-                </View>
-                <Text style={s.refQuote}>&ldquo;{ref.q}&rdquo;</Text>
-                <Text style={s.refAuthor}>{ref.a}</Text>
-                <Text style={s.refRole}>{ref.r}</Text>
-              </View>
-            ))}
-          </View>
         </View>
         <PageFooter name={nm} conf={t.conf} num={3} total={totalPages} />
       </Page>
 
-      {/* ═══════════════════ PAGE 4: CASE STUDIES ═══════════════════ */}
+      {/* ═══════════════════ PAGE 3: CASE STUDIES + EQUIPMENT ═══════════════════ */}
       <Page size="A4" style={s.page}>
         <PageHeader title={t.caseTitle} lang={language} />
         <View style={s.body}>
@@ -606,10 +559,10 @@ export function createPdfDocument(language: Language, companyInfo: CompanyInfo) 
             ))}
           </View>
         </View>
-        <PageFooter name={nm} conf={t.conf} num={4} total={totalPages} />
+        <PageFooter name={nm} conf={t.conf} num={3} total={totalPages} />
       </Page>
 
-      {/* ═══════════════════ PAGE 5: CERTIFICATIONS + WHY US ═══════════════════ */}
+      {/* ═══════════════════ PAGE 4: CERTIFICATIONS + WHY US ═══════════════════ */}
       <Page size="A4" style={s.page}>
         <PageHeader title={t.whyTitle} lang={language} />
         <View style={s.body}>
@@ -649,10 +602,10 @@ export function createPdfDocument(language: Language, companyInfo: CompanyInfo) 
             ))}
           </View>
         </View>
-        <PageFooter name={nm} conf={t.conf} num={5} total={totalPages} />
+        <PageFooter name={nm} conf={t.conf} num={4} total={totalPages} />
       </Page>
 
-      {/* ═══════════════════ PAGE 6: CONTACT / CTA ═══════════════════ */}
+      {/* ═══════════════════ PAGE 5: CONTACT / CTA ═══════════════════ */}
       <Page size="A4" style={s.page}>
         <PageHeader title={t.ctaTitle} lang={language} />
         <OrangeCorner position="br" />
@@ -698,7 +651,7 @@ export function createPdfDocument(language: Language, companyInfo: CompanyInfo) 
             </Text>
           </View>
         </View>
-        <PageFooter name={nm} conf={t.conf} num={6} total={totalPages} />
+        <PageFooter name={nm} conf={t.conf} num={5} total={totalPages} />
       </Page>
     </Document>
   );
