@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Prospect {
+  id          String    @id @default(cuid())
+  companyName String
+  country     String
+  city        String
+  address     String?
+  phone       String?
+  website     String?
+  industry    String?
+  status      String    @default("new") // new, contacted, replied, meeting, won, lost
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  contacts    Contact[]
+  emailsSent  EmailSent[]
+}
+
+model Contact {
+  id         String    @id @default(cuid())
+  prospectId String
+  prospect   Prospect  @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  name       String?
+  email      String
+  role       String?
+  source     String?   // hunter, scraped, manual
+  createdAt  DateTime  @default(now())
+  emailsSent EmailSent[]
+}
+
+model Campaign {
+  id        String      @id @default(cuid())
+  name      String
+  language  String      @default("en") // en, fr
+  subject   String
+  body      String
+  createdAt DateTime    @default(now())
+  emailsSent EmailSent[]
+}
+
+model EmailSent {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId  String
+  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  subject    String
+  status     String   @default("sent") // sent, delivered, opened, replied, bounced
+  sentAt     DateTime @default(now())
+}
+
+model Settings {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
