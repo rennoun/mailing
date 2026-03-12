@@ -7,11 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Save, Key, Mail, Building } from "lucide-react";
+import { Save, Key, Mail, Building, Send, CheckCircle, AlertCircle } from "lucide-react";
+
+const SMTP_PRESETS: Record<string, { host: string; port: string }> = {
+  gmail: { host: "smtp.gmail.com", port: "587" },
+  outlook: { host: "smtp.office365.com", port: "587" },
+  yahoo: { host: "smtp.mail.yahoo.com", port: "587" },
+  custom: { host: "", port: "587" },
+};
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -21,6 +30,14 @@ export default function SettingsPage() {
 
   const update = (key: string, value: string) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const applyPreset = (preset: string) => {
+    const p = SMTP_PRESETS[preset];
+    if (p) {
+      update("smtp_host", p.host);
+      update("smtp_port", p.port);
+    }
   };
 
   const save = async () => {
@@ -36,6 +53,43 @@ export default function SettingsPage() {
       toast.error("Failed to save settings");
     }
     setSaving(false);
+  };
+
+  const sendTestEmail = async () => {
+    if (!testEmail) {
+      toast.error("Enter a recipient email address first");
+      return;
+    }
+    setTesting(true);
+    // Save settings first, then test
+    try {
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      });
+    } catch {
+      toast.error("Failed to save settings before testing");
+      setTesting(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/email/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: testEmail }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Test email sent to ${testEmail}!`);
+      } else {
+        toast.error(data.error || "Failed to send test email");
+      }
+    } catch {
+      toast.error("Failed to send test email");
+    }
+    setTesting(false);
   };
 
   return (
@@ -77,7 +131,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* SMTP Configuration */}
+      {/* Email Configuration */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -99,7 +153,36 @@ export default function SettingsPage() {
 
           <Separator />
 
-          <p className="text-sm font-medium">SMTP Settings</p>
+          {/* SMTP Section */}
+          <div>
+            <p className="text-sm font-medium mb-2">SMTP Settings</p>
+            <div className="flex gap-2 mb-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => applyPreset("gmail")}
+              >
+                Gmail
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => applyPreset("outlook")}
+              >
+                Outlook / Office 365
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => applyPreset("yahoo")}
+              >
+                Yahoo
+              </Button>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>SMTP Host</Label>
@@ -108,6 +191,9 @@ export default function SettingsPage() {
                 value={settings.smtp_host || ""}
                 onChange={(e) => update("smtp_host", e.target.value)}
               />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Server address, NOT your email. E.g. smtp.gmail.com
+              </p>
             </div>
             <div>
               <Label>SMTP Port</Label>
@@ -116,28 +202,48 @@ export default function SettingsPage() {
                 value={settings.smtp_port || ""}
                 onChange={(e) => update("smtp_port", e.target.value)}
               />
+              <p className="mt-1 text-xs text-muted-foreground">
+                587 (TLS) or 465 (SSL)
+              </p>
             </div>
             <div>
               <Label>SMTP Username</Label>
               <Input
-                placeholder="your@email.com"
+                placeholder="your@gmail.com"
                 value={settings.smtp_user || ""}
                 onChange={(e) => update("smtp_user", e.target.value)}
               />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Usually your full email address
+              </p>
             </div>
             <div>
               <Label>SMTP Password</Label>
               <Input
                 type="password"
-                placeholder="App password"
+                placeholder="App password (not your main password)"
                 value={settings.smtp_pass || ""}
                 onChange={(e) => update("smtp_pass", e.target.value)}
               />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Gmail: use App Password from myaccount.google.com
+              </p>
             </div>
           </div>
 
+          {settings.smtp_host?.includes("@") && (
+            <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-md">
+              <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+              <p className="text-sm text-destructive">
+                SMTP Host looks like an email address. It should be a server like{" "}
+                <strong>smtp.gmail.com</strong> — not your email address.
+              </p>
+            </div>
+          )}
+
           <Separator />
 
+          {/* Resend Section */}
           <div>
             <Label>Resend API Key</Label>
             <Input
@@ -146,6 +252,32 @@ export default function SettingsPage() {
               value={settings.resend_api_key || ""}
               onChange={(e) => update("resend_api_key", e.target.value)}
             />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Only needed if using Resend method. Get one at resend.com
+            </p>
+          </div>
+
+          <Separator />
+
+          {/* Test Email */}
+          <div>
+            <p className="text-sm font-medium mb-2 flex items-center gap-2">
+              <Send className="h-4 w-4" /> Send Test Email
+            </p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="test@example.com"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={sendTestEmail} disabled={testing} variant="outline">
+                {testing ? "Sending..." : "Send Test"}
+              </Button>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Saves settings first, then sends a test email to verify your configuration.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -171,12 +303,15 @@ export default function SettingsPage() {
               />
             </div>
             <div>
-              <Label>Email</Label>
+              <Label>Company Email (From address)</Label>
               <Input
                 placeholder="contact@company.com"
                 value={settings.company_email || ""}
                 onChange={(e) => update("company_email", e.target.value)}
               />
+              <p className="mt-1 text-xs text-muted-foreground">
+                The &quot;From&quot; address on outgoing emails
+              </p>
             </div>
             <div>
               <Label>Phone</Label>

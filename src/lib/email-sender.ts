@@ -32,7 +32,15 @@ async function sendViaSMTP(options: EmailOptions): Promise<{ success: boolean; e
   const fromName = await getSetting("company_name");
 
   if (!host || !user || !pass) {
-    return { success: false, error: "SMTP not configured. Go to Settings." };
+    return { success: false, error: "SMTP not configured. Go to Settings and fill in SMTP Host, Username, and Password." };
+  }
+
+  // Validate host is a real server, not an email address
+  if (host.includes("@")) {
+    return {
+      success: false,
+      error: `SMTP Host "${host}" looks like an email address. It should be a server like smtp.gmail.com or smtp.office365.com. Fix it in Settings.`,
+    };
   }
 
   const transporter = nodemailer.createTransport({
